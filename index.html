@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Coffee — Inventory</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+  .app{max-width:540px;margin:0 auto;padding:1rem;padding-bottom:3rem;}
+  .header{padding:.75rem 0 .5rem;border-bottom:1px solid #e0dfd8;margin-bottom:.75rem;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .header h1{font-size:20px;font-weight:600;color:#1a1a18;}
+  .logo{font-size:13px;font-weight:600;color:#8b5e3c;letter-spacing:.03em;}
+  .day-badge{font-size:12px;padding:3px 10px;border-radius:6px;background:#e8f0fc;color:#2c5ecc;font-weight:600;white-space:nowrap;}
+  .deadline-row{display:flex;flex-direction:column;gap:2px;}
+  .deadline{font-size:12px;color:#888780;display:flex;align-items:center;gap:5px;}
+  .employee-row{margin-bottom:.75rem;}
+  .employee-label{font-size:12px;color:#888780;margin-bottom:4px;}
+  select,input,textarea{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  .employee-select{width:100%;height:40px;border:1px solid #c8c7be;border-radius:8px;font-size:15px;color:#1a1a18;background:#fff;padding:0 12px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+  .tab-bar{display:flex;gap:3px;margin-bottom:.75rem;background:#e8e7e0;border-radius:8px;padding:3px;}
+  .tab{flex:1;padding:7px 2px;border:none;background:transparent;font-size:12px;font-family:inherit;color:#888780;border-radius:6px;cursor:pointer;transition:all .15s;font-weight:500;}
+  .tab.active{background:#fff;color:#1a1a18;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .subtab-bar{display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap;}
+  .subtab{padding:6px 12px;border:1px solid #d0cfc8;background:#fff;font-size:12px;font-family:inherit;color:#555;border-radius:6px;cursor:pointer;transition:all .15s;font-weight:500;}
+  .subtab.active{background:#e8f0fc;color:#2c5ecc;border-color:#b0c4f0;font-weight:600;}
+  .section{margin-bottom:1.25rem;}
+  .section-title{font-size:11px;font-weight:700;color:#888780;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid #e0dfd8;}
+  .item-row{padding:10px 0;border-bottom:1px solid #e8e7e0;}
+  .item-row:last-child{border-bottom:none;}
+  .item-name{font-size:15px;color:#1a1a18;font-weight:500;margin-bottom:2px;}
+  .item-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .item-unit{font-size:11px;color:#aaa9a0;}
+  .low-tag{font-size:11px;color:#c47a00;display:none;font-weight:500;}
+  .low-tag.show{display:inline;}
+  .inputs-row{display:flex;align-items:center;gap:10px;}
+  .loc-group{display:flex;align-items:center;gap:6px;}
+  .loc-label{font-size:11px;color:#888780;min-width:60px;font-weight:500;}
+  .qty-input{width:70px;height:36px;border:1px solid #c8c7be;border-radius:8px;text-align:center;font-size:16px;color:#1a1a18;background:#fff;}
+  .qty-input:focus{outline:none;border-color:#2c5ecc;box-shadow:0 0 0 3px rgba(44,94,204,.12);}
+  .qty-input.flagged{border-color:#c47a00;background:#fff8e8;color:#9a5e00;}
+  .divider{font-size:14px;color:#ccc;font-weight:300;}
+  .total-display{font-size:13px;color:#888780;margin-left:2px;}
+  .total-display span{font-weight:700;color:#1a1a18;}
+  .progress-wrap{margin-bottom:1rem;}
+  .progress-label{font-size:12px;color:#888780;margin-bottom:5px;display:flex;justify-content:space-between;}
+  .progress-label strong{color:#1a1a18;}
+  .progress-bar-bg{background:#e0dfd8;border-radius:99px;height:5px;}
+  .progress-bar{height:5px;border-radius:99px;background:#2c5ecc;transition:width .3s;}
+  .notes-row{padding:8px 0 1rem;}
+  .notes-label{font-size:12px;color:#888780;margin-bottom:4px;font-weight:500;}
+  .notes-input{width:100%;font-size:14px;color:#1a1a18;background:#fff;border:1px solid #c8c7be;border-radius:8px;padding:8px 12px;resize:none;}
+  .notes-input:focus{outline:none;border-color:#2c5ecc;}
+  .submit-btn{width:100%;padding:13px;border-radius:8px;background:#2c5ecc;color:#fff;font-size:16px;font-weight:600;border:none;cursor:pointer;margin-bottom:10px;transition:opacity .15s;}
+  .submit-btn:hover{opacity:.9;}
+  .submit-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .report-btn{width:100%;padding:11px;border-radius:8px;background:transparent;color:#2c5ecc;font-size:14px;font-weight:600;border:1.5px solid #2c5ecc;cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;margin-bottom:10px;transition:background .15s;}
+  .report-btn.show{display:flex;}
+  .report-btn:hover{background:#e8f0fc;}
+  .banner{display:none;border-radius:8px;padding:12px 16px;margin-bottom:1rem;font-size:14px;align-items:center;gap:10px;font-weight:500;}
+  .banner.show{display:flex;}
+  .banner.success{background:#e8f5ee;border:1px solid #7ec8a0;color:#1d6e42;}
+  .banner.error{background:#fde8e8;border:1px solid #f0a0a0;color:#991f1f;}
+  .banner.loading{background:#e8f0fc;border:1px solid #b0c4f0;color:#2c5ecc;}
+  .report-panel{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1rem 1.25rem;margin-top:.5rem;display:none;}
+  .report-panel.show{display:block;}
+  .report-vendor{margin-bottom:1.25rem;}
+  .report-vendor:last-child{margin-bottom:0;}
+  .report-vendor-title{font-size:11px;font-weight:700;color:#2c5ecc;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e8f0fc;}
+  .report-row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;padding:5px 0;border-bottom:1px solid #f0efe8;gap:12px;}
+  .report-row:last-child{border-bottom:none;}
+  .report-row .rname{flex:1;color:#1a1a18;}
+  .report-row .rname.flag{color:#c47a00;}
+  .report-row .rqty{font-size:12px;color:#888780;white-space:nowrap;flex-shrink:0;}
+  .report-row .rqty strong{color:#1a1a18;}
+  .report-title{font-size:15px;font-weight:600;color:#1a1a18;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .report-notes{margin-top:12px;padding-top:10px;border-top:1px solid #e0dfd8;font-size:13px;color:#888780;}
+  .report-notes strong{color:#1a1a18;}
+  .card{background:#fff;border-radius:12px;border:1px solid #e0dfd8;padding:1rem 1.25rem;margin-bottom:.75rem;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <span class="logo">CENTRAL COFFEE CO.</span>
+      <span class="day-badge" id="day-badge">Monday</span>
+    </div>
+    <h1>Inventory count</h1>
+    <div class="deadline-row" id="deadline-row"></div>
+  </div>
+
+  <div class="card">
+    <div class="employee-row">
+      <div class="employee-label">Who is doing this count?</div>
+      <select class="employee-select" id="employee-select">
+        <option value="">— Select your name —</option>
+        <option>Alex Brown</option><option>Alfred Ruiz</option><option>Caraline Payne</option>
+        <option>Chloe Thatcher</option><option>Danielle Spragge</option><option>Diego Nunez</option>
+        <option>Emma Escobar</option><option>Faith Walton</option><option>Francis Mina</option>
+        <option>Jackie Fee</option><option>Jacob Santos</option><option>Jenna Strope</option>
+        <option>JJ Grewal</option><option>Juliana Payne</option><option>Kristen Morse</option>
+        <option>Leslie Espinoza</option><option>Makaela Cordero</option><option>Nicholas Leonardo</option>
+        <option>Patti Lee</option><option>Rachel Johnson</option><option>Rose Poni</option>
+        <option>Sam Sandoval</option><option>Suzy Spragge</option><option>William Spragge</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tab-bar" role="tablist">
+    <button class="tab" onclick="switchDay(0)" role="tab">Mon</button>
+    <button class="tab" onclick="switchDay(1)" role="tab">Tue</button>
+    <button class="tab" onclick="switchDay(2)" role="tab">Wed</button>
+    <button class="tab" onclick="switchDay(3)" role="tab">Thu</button>
+    <button class="tab" onclick="switchDay(4)" role="tab">Fri</button>
+    <button class="tab" onclick="switchDay(5)" role="tab">Sun</button>
+  </div>
+
+  <div id="subtab-bar" class="subtab-bar"></div>
+  <div id="banner" class="banner"></div>
+
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Items counted</span><strong id="progress-text">0 / 0</strong></div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="card" id="item-list"></div>
+
+  <div class="notes-row">
+    <div class="notes-label">Notes for this count (optional)</div>
+    <textarea class="notes-input" id="notes-field" rows="2" placeholder="e.g. running low on vanilla, oat milk delivery delayed…"></textarea>
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitCount()">Submit count</button>
+  <button class="report-btn" id="report-btn" onclick="toggleReport()">&#x1F4CB; View order report</button>
+  <div class="report-panel" id="report-panel"></div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwYkvKD77xJESjO8jjas-UEElIJaq5Fd0SnzEeTQF3anOB6Ivv5lKa45e_9fkCaq0hN/exec';
+const DAYS=[
+  {label:'Monday',deadlines:['Paper Products — submit by 2:00 PM','Coffee — submit by 8:30 AM','Costco — submit by 2:00 PM'],sections:[
+    {subtab:'Paper Products',groups:[
+      {title:'Cups & lids',vendor:'Webstaurant',items:[
+        {n:'Sample cups',u:'Sleeves',min:2},{n:'Sample lids',u:'Sleeves',min:2},
+        {n:'4 oz hot cup',u:'Sleeves',min:10},{n:'4 oz lid',u:'Sleeves',min:2},
+        {n:'8 oz hot cup',u:'Sleeves',min:30},{n:'8 oz lid (white)',u:'Sleeves',min:5},
+        {n:'9 oz water cup',u:'Sleeves',min:5},{n:'12 oz hot cup',u:'Sleeves',min:60},
+        {n:'12 oz hot lid (black)',u:'Sleeves',min:20},{n:'16 oz hot cup',u:'Sleeves',min:20},
+        {n:'16 oz iced cup (TPD16D)',u:'Sleeves',min:40},{n:'24 oz iced cup',u:'Sleeves',min:6},
+        {n:'Strawless lid',u:'Sleeves',min:20},{n:'Dome lid',u:'Sleeves',min:12},
+      ]},
+      {title:'Misc. paper',vendor:'Webstaurant',items:[
+        {n:'Cup sleeves (12/16 oz)',u:'Sleeves',min:24},{n:'Cup sleeves (8 oz)',u:'Sleeves',min:24},
+        {n:'Cup holders',u:'Sleeves',min:1},{n:'Large pastry box (#2)',u:'Sleeves',min:8},
+        {n:'Small pastry box (#8)',u:'Sleeves',min:10},{n:'Pastry bag',u:'Box',min:0.5},
+        {n:'Drip coffee filters (large)',u:'Sleeves',min:0.5},{n:'Toddy filters',u:'Packs',min:1},
+        {n:'Pour over filters',u:'Packs',min:1},{n:'Medium parchment 9"x12"',u:'Box',min:1},
+        {n:'96 oz traveler',u:'Each',min:8},{n:'Dispenser napkins',u:'Packs',min:12},
+        {n:'Paper towels',u:'Packs',min:15},{n:'Straws (plastic wrapped)',u:'Packs',min:6},
+        {n:'Green knives (compostable)',u:'Box',min:0.5},{n:'Green forks (compostable)',u:'Box',min:0.5},
+        {n:'Green spoons (compostable)',u:'Box',min:0.5},{n:'Stir sticks',u:'Box',min:0.5},
+        {n:'Drink stoppers',u:'Box',min:1},{n:'Drink stopper sticker (orange)',u:'Rolls',min:4},
+        {n:'Masking tape',u:'Each',min:4},{n:'Grab N Go boxes',u:'Sleeves',min:1},
+        {n:'Grab N Go box lids',u:'Sleeves',min:1},{n:'Affogato containers',u:'Sleeves',min:1},
+        {n:'Affogato container lids',u:'Sleeves',min:1},
+        {n:'Deli sheets (12"x10 3/4", green)',u:'Box',min:2},{n:'Bakery sheets (6"x10 3/4", red)',u:'Box',min:2},
+      ]},
+      {title:'Consumables',vendor:'Webstaurant',items:[
+        {n:'Cereal cups',u:'Each',min:9},{n:'Raw sugar',u:'Box',min:1},
+        {n:'White sugar',u:'Box',min:0.5},{n:'Green sugar',u:'Box',min:0.25},
+        {n:'Blue sugar',u:'Box',min:0.25},{n:'Pink sugar',u:'Box',min:0.25},{n:'Yellow sugar',u:'Box',min:0.25},
+      ]},
+      {title:'Cleaning & hygiene',vendor:'Webstaurant',items:[
+        {n:'Small latex gloves',u:'Box',min:2},{n:'Magic erasers',u:'Box',min:2},
+        {n:'Medium latex gloves (pink)',u:'Box',min:18},{n:'Medium nitrile gloves (black)',u:'Box',min:18},
+        {n:'Large nitrile gloves (blue)',u:'Box',min:10},{n:'Toilet seat covers',u:'Packs',min:2},
+        {n:'Toilet paper',u:'Rolls',min:29},{n:'Hand soap',u:'Bottle',min:2},
+      ]},
+      {title:'Other supplies',vendor:'Mixed',items:[
+        {n:'Food date labels',u:'Rolls',min:2,vendor:'Amazon'},{n:'Butane',u:'Bottles',min:1,vendor:'Smoke Shop'},
+        {n:'Whip chargers',u:'Box',min:4,vendor:'Home Depot'},{n:'Matcha whisks',u:'Each',min:3,vendor:'Amazon'},
+        {n:'Bamboo skewers',u:'Box',min:2,vendor:'Amazon'},{n:'Turkey tower picks',u:'Box',min:2,vendor:'Amazon'},
+        {n:'Receipt paper',u:'Rolls',min:8,vendor:'Amazon'},{n:'Thermal drink labels (Brother)',u:'Rolls',min:12,vendor:'Amazon'},
+        {n:'Thermal labels (Grab-N-Go)',u:'Rolls',min:2,vendor:'Amazon'},
+        {n:'Sponges (Scrub Daddies)',u:'Each',min:4,vendor:'Amazon'},{n:'Drain sponges',u:'Each',min:3,vendor:'Amazon'},
+      ]},
+    ]},
+    {subtab:'Coffee',groups:[
+      {title:'5 lb. bags',vendor:'Roaster',items:[
+        {n:'Espresso (5lb)',u:'Bags',min:24},{n:'Three Palms Espresso (5lb)',u:'Bags',min:7},
+        {n:'Decaf Guatemala (5lb)',u:'Bags',min:2},{n:'Central Coffee Blend (5lb)',u:'Bags',min:1},
+        {n:'Valley (5lb)',u:'Bags',min:1},{n:'Rwanda (5lb)',u:'Bags',min:1},{n:'Colombia (5lb)',u:'Bags',min:2},
+      ]},
+      {title:'12 oz. bags',vendor:'Roaster',items:[
+        {n:'Espresso (12oz)',u:'Bags',min:4},{n:'Three Palms Espresso (12oz)',u:'Bags',min:4},
+        {n:'Grapes of Wrath (12oz)',u:'Bags',min:4},{n:'Kenya Peaberry (12oz)',u:'Bags',min:2},
+        {n:'Valley Blend (12oz)',u:'Bags',min:2},{n:'Tanzania Peaberry (12oz)',u:'Bags',min:2},
+        {n:'Nicaragua Honey (12oz)',u:'Bags',min:2},{n:'Colombia (12oz)',u:'Bags',min:2},
+        {n:'Hwy 99 Blend (12oz)',u:'Bags',min:2},{n:'India (12oz)',u:'Bags',min:2},
+        {n:'Ethiopia (12oz)',u:'Bags',min:2},{n:'Brazil (12oz)',u:'Bags',min:2},
+        {n:'Guatemala (12oz)',u:'Bags',min:2},{n:'Mexico (12oz)',u:'Bags',min:2},
+        {n:'Decaf Guatemala (12oz)',u:'Bags',min:2},{n:'Costa Rica (12oz)',u:'Bags',min:2},
+        {n:'Burundi (12oz)',u:'Bags',min:2},
+      ]},
+    ]},
+    {subtab:'Costco',groups:[
+      {title:'Dairy',vendor:'Costco',items:[
+        {n:'Whole milk',u:'Gallons (2-pack)',min:58},{n:'2% milk',u:'Gallons (2-pack)',min:6},
+        {n:'Half and half',u:'Half gallons',min:6},{n:'Heavy cream',u:'Half gallons',min:9},
+        {n:'Eggs (fresh)',u:'Each',min:40},{n:'Butter',u:'Boxes (4-pack)',min:4},
+        {n:'Cottage cheese',u:'Tub',min:5},{n:'Eggs (hard boiled)',u:'Boxes',min:3},
+        {n:'Cream cheese',u:'3lb tub',min:7},{n:'Mozzarella',u:'Each (2-pack)',min:6},
+      ]},
+      {title:'Beverages',vendor:'Costco',items:[
+        {n:'RedBull',u:'Cans',min:48},{n:'Sugar free RedBull',u:'Cans',min:24},
+        {n:'Fiji water',u:'Bottles',min:48},{n:'Sparkling mineral water',u:'Bottles',min:25},
+        {n:'Vita Coco coconut water',u:'Bottles',min:28},{n:'Oat milk',u:'Bottles',min:240},
+        {n:'Almond milk',u:'Bottles',min:80},{n:'Chai',u:'Bottles',min:43},
+        {n:'Small apple juice',u:'Bottles',min:24},{n:'Nesquick chocolate milk',u:'Bottles',min:12},
+        {n:'Horizon whole milk',u:'Bottles',min:12},{n:'Nesquick strawberry milk',u:'Bottles',min:8},
+        {n:'Sweetened condensed milk',u:'Cans (6-pack)',min:16},{n:'Lemonade',u:'Jugs (2-pack)',min:8},
+        {n:'Orange juice',u:'Bottles (3-pack)',min:9},{n:'Naked juice',u:'Bottles',min:8},
+      ]},
+      {title:'Food & produce',vendor:'Costco',items:[
+        {n:'Turkey deli meat',u:'Each (2-pack)',min:6},{n:'Prosciutto',u:'Pack',min:2},
+        {n:'Tomatoes',u:'Box',min:2},{n:'Cucumbers',u:'Each (3-pack)',min:7},
+        {n:'Blueberries',u:'Pack',min:4},{n:'Strawberries',u:'Pack',min:3},
+        {n:'Frozen blueberries',u:'Pack',min:2},{n:'Frozen strawberries',u:'Pack',min:6},
+        {n:'Lemons',u:'Bag',min:1.5},{n:'Arugula',u:'Box',min:4},
+        {n:'Babybel cheese',u:'Bag',min:0.5},{n:'Peanut butter',u:'Jar (2-pack)',min:4},
+        {n:'Nutella',u:'Jar',min:4},{n:'Maple syrup',u:'Bottles',min:13},
+        {n:'Bacon crumbles',u:'Bag',min:2},{n:'Brownie mix',u:'Bags (6-pack)',min:4},{n:'Madelines',u:'Box',min:0.25},
+      ]},
+      {title:'Pantry',vendor:'Costco',items:[
+        {n:'Lemon juice',u:'Bottle',min:2},{n:'Pam/oil spray',u:'Bottles (2-pack)',min:2},
+        {n:'Raw sugar',u:'Bag',min:2},{n:'Brown sugar',u:'Bag',min:3},{n:'White sugar',u:'Bag',min:4},
+        {n:'Sea salt',u:'Container (5lb)',min:0.25},{n:'Pepper',u:'Bottle',min:2},
+        {n:'Red pepper flakes',u:'Bottle',min:1},{n:'Pineapple juice',u:'Can',min:4},
+        {n:'Organic protein powder',u:'Container',min:2},{n:'Honey packets',u:'Box',min:0.75},
+      ]},
+      {title:'Misc.',vendor:'Costco',items:[
+        {n:'Kombucha',u:'Bottles (6-pack)',min:7},{n:'Salami and cheese packs',u:'Each (8-pack)',min:6},
+        {n:'Yogurt pouch',u:'Box',min:4},{n:'Granola',u:'Bag',min:2},{n:'Chia seeds',u:'Bag',min:2},
+        {n:'Posana bars',u:'Boxes',min:1},{n:'13 gal trash bags',u:'Box',min:1},{n:'33 gal trash bags',u:'Box',min:1.5},
+      ]},
+    ]},
+  ]},
+  {label:'Tuesday',deadlines:['Special Items — submit by 11:00 AM','Consumables — submit by 2:00 PM'],sections:[
+    {subtab:'Special Items',groups:[
+      {title:'Syrups (Special)',vendor:'Barista Underground',items:[
+        {n:'Hazelnut',u:'Bottles',min:7},{n:'Frappe base (MONIN)',u:'Bags',min:8},
+        {n:'Coconut',u:'Bottles',min:11},{n:'Dark chocolate',u:'Bottles',min:18},
+        {n:'White chocolate',u:'Bottles',min:18},{n:'Caramel sauce',u:'Bottles',min:18},{n:'Peach',u:'Bottles',min:7},
+      ]},
+    ]},
+    {subtab:'Consumables',groups:[
+      {title:'Syrups',vendor:'Sysco',items:[
+        {n:'Vanilla',u:'Bottles',min:26},{n:'Sugar free hazelnut',u:'Bottles',min:4},
+        {n:'Sugar free vanilla',u:'Bottles',min:11},{n:'Toasted marshmallow',u:'Bottles',min:9,vendor:'Barista Underground'},
+        {n:'Macadamia (seasonal)',u:'Bottles',min:9,vendor:'Barista Underground'},
+        {n:'Lavender',u:'Bottles',min:7},{n:'Caramel',u:'Bottles',min:7},{n:'Strawberry',u:'Bottles',min:7},
+        {n:'Blue raspberry',u:'Bottles',min:7,vendor:'Intermix Beverage'},
+        {n:'Pumpkin pie sauce (seasonal)',u:'Bottles',min:0},{n:'Pumpkin spice syrup (seasonal)',u:'Bottles',min:0},
+      ]},
+      {title:'Teas (Blue Cart)',vendor:'Blue Cart',items:[
+        {n:'Jasmine Monkey King',u:'Bag',min:1},{n:'Earl Grey Crème',u:'Bag',min:2},
+        {n:'Irish Breakfast',u:'Bag',min:1},{n:'Hibiscus petals',u:'Bag',min:2},
+        {n:'American peppermint',u:'Bag',min:1},{n:'Egyptian chamomile',u:'Bag',min:1},
+      ]},
+      {title:'Milk alternatives',vendor:'Sysco',items:[{n:'Coconut milk',u:'Each',min:30}]},
+      {title:'Beverages',vendor:'Sysco',items:[
+        {n:'Coca Cola',u:'Bottles',min:16},{n:'Tonic water',u:'Bottles',min:20},{n:'Topo Chico (glass)',u:'Bottles',min:45},
+      ]},
+      {title:'Food',vendor:'Sysco',items:[
+        {n:'Blueberry cobbler muffin',u:'Cases',min:4},{n:"Sourdough bread (Beckmann's)",u:'Loaves',min:0,vendor:"Beckmann's"},
+        {n:'Marshmallows',u:'Bags',min:4},{n:'Olive oil (Scarlata)',u:'Bottles',min:8,vendor:'Scarlata'},
+        {n:'Balsamic vinegar (Scarlata)',u:'Bottles',min:2,vendor:'Scarlata'},
+        {n:'Orange slices',u:'Box',min:1},{n:'Basil',u:'Bag',min:0.5},{n:'Parsley',u:'Bag',min:0.5},
+        {n:'Mint',u:'Bag',min:1},{n:'Avocados',u:'Each',min:50},{n:'Salmon',u:'Packs',min:4},
+        {n:'Uglies BBQ',u:'Each',min:9},{n:'Uglies sea salt',u:'Each',min:9},{n:'Uglies jalapeño',u:'Each',min:9},
+      ]},
+      {title:'Spices & powders',vendor:'Amazon',items:[
+        {n:'Cinnamon',u:'Bottles',min:3},{n:'Sesame seeds',u:'Bottles',min:2},{n:'Dill',u:'Bottles',min:1},
+        {n:'Ginger',u:'Bottles',min:2},{n:'Gold dust',u:'Bottles',min:1},{n:'Lavender buds',u:'Bag',min:0.5},
+        {n:'Spirulina',u:'Jars',min:1},{n:'PUR gum',u:'Each',min:8},{n:'PUR mints',u:'Each',min:4},
+        {n:'Ube concentrate (seasonal)',u:'Bottles',min:0.25},{n:'Ube powder (seasonal)',u:'Bag',min:0.5},
+        {n:'Beet powder (seasonal)',u:'Bag',min:0.5},
+      ]},
+      {title:'Other',vendor:"Farmer's Market",items:[
+        {n:'Honey',u:'Bottles',min:2,vendor:"Farmer's Market"},{n:'Matcha',u:'Bag',min:10,vendor:'Costco'},
+      ]},
+    ]},
+  ]},
+  {label:'Wednesday',deadlines:['Costco Online — submit by 2:00 PM'],sections:[
+    {subtab:'Costco Online',groups:[
+      {title:'Dairy & eggs',vendor:'Costco Online',items:[
+        {n:'Whole milk',u:'Gallons (2-pack)',min:58},{n:'2% milk',u:'Gallons (2-pack)',min:6},
+        {n:'Half and half',u:'Half gallons',min:5},{n:'Heavy cream',u:'Half gallons',min:9},
+        {n:'Eggs (fresh)',u:'Each',min:40},{n:'Cream cheese',u:'3lb tub',min:7},
+        {n:'Mozzarella',u:'Each (2-pack)',min:6},{n:'Turkey deli meat',u:'Each (2-pack)',min:4},
+      ]},
+      {title:'Produce',vendor:'Costco Online',items:[
+        {n:'Tomatoes',u:'Box',min:2},{n:'Cucumber',u:'Each (3-pack)',min:7},
+        {n:'Blueberries',u:'Pack',min:2},{n:'Strawberries',u:'Pack',min:3},
+        {n:'Lemons',u:'Bag',min:1.5},{n:'Bananas',u:'Bunch',min:6},{n:'Avocados',u:'Each',min:30},
+        {n:'Frozen blueberries',u:'Pack',min:2},{n:'Frozen strawberries',u:'Pack',min:6},
+      ]},
+      {title:'Pantry & misc.',vendor:'Costco Online',items:[
+        {n:'Granola',u:'Bag',min:2},{n:'Chia seeds',u:'Bag',min:2},
+        {n:'Kombucha',u:'Bottles (6-pack)',min:7},{n:'Salami and cheese packs',u:'Each (8-pack)',min:6},
+        {n:'Yogurt pouch',u:'Box',min:4},
+      ]},
+    ]},
+  ]},
+  {label:'Thursday',deadlines:['Winco — submit by 2:00 PM'],sections:[
+    {subtab:'Winco',groups:[
+      {title:'Condiments & jars',vendor:'Winco',items:[
+        {n:'Pickled onions',u:'Jar',min:10},{n:'Peperoncini peppers',u:'Jar',min:5},
+        {n:'Olives',u:'Jar',min:4},{n:'Maraschino cherries',u:'Jar',min:3},
+        {n:'Strawberry jam',u:'Jar',min:3},{n:'Chipotle powder',u:'Jar',min:2},
+        {n:'Everything bagel seasoning',u:'Jar',min:1},{n:'Apple cider vinegar',u:'Bottle',min:1},
+        {n:'Vanilla extract',u:'Bottle',min:0.5},
+      ]},
+      {title:'Baking & pantry',vendor:'Winco',items:[
+        {n:'Coco powder',u:'Container',min:1},{n:'Salt (iodized)',u:'Bottle',min:1},
+        {n:'Vegetable oil',u:'Bottle',min:1},{n:'Flour',u:'Bag',min:2},
+      ]},
+      {title:'Dairy & refrigerated',vendor:'Winco',items:[
+        {n:'Tillamook vanilla bean ice cream',u:'Container',min:5},
+        {n:'Vanilla Greek yogurt',u:'Tub',min:4},{n:'Three cheese blend',u:'Bag',min:3},
+      ]},
+      {title:'Produce',vendor:'Winco',items:[
+        {n:'Bananas',u:'Bunches',min:8},{n:'Green chiles',u:'7oz cans',min:8},
+      ]},
+      {title:'Bakery',vendor:'Winco',items:[
+        {n:'Asiago bagel',u:'Pack',min:7},{n:'Everything bagel',u:'Pack',min:6},
+        {n:'Plain bagel',u:'Pack',min:5},{n:'Blueberry bagel',u:'Pack',min:4},
+        {n:'Canyon Bakehouse GF bread',u:'Loaf',min:2},
+      ]},
+      {title:'Dry & other',vendor:'Winco',items:[
+        {n:'Oatmeal - Maple & Brown Sugar',u:'Container',min:12},{n:'Oatmeal - Blueberry',u:'Container',min:10},
+        {n:'Oatmeal - Apples & Cinnamon',u:'Container',min:8},{n:'Oatmeal - Plain',u:'Container',min:8},
+        {n:'Hash browns',u:'Pack',min:6},{n:'Comet',u:'Container',min:3},
+      ]},
+    ]},
+  ]},
+  {label:'Friday',deadlines:['Consumables — submit by 2:00 PM'],sections:[
+    {subtab:'Consumables',groups:[
+      {title:'Syrups',vendor:'Sysco',items:[
+        {n:'Vanilla',u:'Bottles',min:26},{n:'Sugar free hazelnut',u:'Bottles',min:4},
+        {n:'Sugar free vanilla',u:'Bottles',min:11},{n:'Toasted marshmallow',u:'Bottles',min:9,vendor:'Barista Underground'},
+        {n:'Macadamia (seasonal)',u:'Bottles',min:9,vendor:'Barista Underground'},
+        {n:'Lavender',u:'Bottles',min:7},{n:'Caramel',u:'Bottles',min:7},{n:'Strawberry',u:'Bottles',min:7},
+        {n:'Blue raspberry',u:'Bottles',min:7,vendor:'Intermix Beverage'},
+      ]},
+      {title:'Teas (Blue Cart)',vendor:'Blue Cart',items:[
+        {n:'Jasmine Monkey King',u:'Bag',min:1},{n:'Earl Grey Crème',u:'Bag',min:2},
+        {n:'Irish Breakfast',u:'Bag',min:1},{n:'Hibiscus petals',u:'Bag',min:2},
+        {n:'American peppermint',u:'Bag',min:1},{n:'Egyptian chamomile',u:'Bag',min:1},
+      ]},
+      {title:'Milk alternatives',vendor:'Sysco',items:[{n:'Coconut milk',u:'Each',min:30}]},
+      {title:'Beverages',vendor:'Sysco',items:[
+        {n:'Coca Cola',u:'Bottles',min:16},{n:'Tonic water',u:'Bottles',min:20},{n:'Topo Chico (glass)',u:'Bottles',min:45},
+      ]},
+      {title:'Food',vendor:'Sysco',items:[
+        {n:'Avocados',u:'Each',min:50},{n:'Basil',u:'Bag',min:0.5},{n:'Parsley',u:'Bag',min:0.5},
+        {n:'Mint',u:'Bag',min:1},{n:'Salmon',u:'Packs',min:4},{n:'Orange slices',u:'Box',min:1},
+      ]},
+    ]},
+  ]},
+  {label:'Sunday',deadlines:['Coffee — submit by 4:00 PM'],sections:[
+    {subtab:'Coffee',groups:[
+      {title:'5 lb. bags',vendor:'Roaster',items:[
+        {n:'Espresso (5lb)',u:'Bags',min:24},{n:'Three Palms Espresso (5lb)',u:'Bags',min:7},
+        {n:'Decaf Guatemala (5lb)',u:'Bags',min:2},{n:'Central Coffee Blend (5lb)',u:'Bags',min:1},
+        {n:'Valley (5lb)',u:'Bags',min:1},{n:'Rwanda (5lb)',u:'Bags',min:1},{n:'Colombia (5lb)',u:'Bags',min:2},
+      ]},
+      {title:'12 oz. bags',vendor:'Roaster',items:[
+        {n:'Espresso (12oz)',u:'Bags',min:4},{n:'Three Palms Espresso (12oz)',u:'Bags',min:4},
+        {n:'Grapes of Wrath (12oz)',u:'Bags',min:4},{n:'Kenya Peaberry (12oz)',u:'Bags',min:2},
+        {n:'Valley Blend (12oz)',u:'Bags',min:2},{n:'Tanzania Peaberry (12oz)',u:'Bags',min:2},
+        {n:'Nicaragua Honey (12oz)',u:'Bags',min:2},{n:'Colombia (12oz)',u:'Bags',min:2},
+        {n:'Hwy 99 Blend (12oz)',u:'Bags',min:2},{n:'India (12oz)',u:'Bags',min:2},
+        {n:'Ethiopia (12oz)',u:'Bags',min:2},{n:'Brazil (12oz)',u:'Bags',min:2},
+        {n:'Guatemala (12oz)',u:'Bags',min:2},{n:'Mexico (12oz)',u:'Bags',min:2},
+        {n:'Decaf Guatemala (12oz)',u:'Bags',min:2},{n:'Costa Rica (12oz)',u:'Bags',min:2},
+        {n:'Burundi (12oz)',u:'Bags',min:2},
+      ]},
+    ]},
+  ]},
+];
+
+let currentDay=0,currentSub=0,counts={};
+function key(d,s,g,i){return d+'_'+s+'_'+g+'_'+i;}
+function getTodayIndex(){const d=new Date().getDay();const map={1:0,2:1,3:2,4:3,5:4,0:5};return map[d]!==undefined?map[d]:0;}
+function showBanner(type,msg){const b=document.getElementById('banner');b.className='banner show '+type;b.innerHTML=(type==='success'?'✓ ':type==='error'?'⚠ ':'⏳ ')+msg;}
+function hideBanner(){document.getElementById('banner').className='banner';}
+
+function switchDay(idx){
+  currentDay=idx;currentSub=0;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.getElementById('day-badge').textContent=DAYS[idx].label;
+  document.getElementById('deadline-row').innerHTML=DAYS[idx].deadlines.map(d=>'<div class="deadline">🕐 '+d+'</div>').join('');
+  hideBanner();
+  document.getElementById('report-btn').classList.remove('show');
+  document.getElementById('report-panel').classList.remove('show');
+  document.getElementById('submit-btn').disabled=false;
+  document.getElementById('submit-btn').textContent='Submit count';
+  renderSubtabs();renderItems();
+}
+
+function renderSubtabs(){
+  const bar=document.getElementById('subtab-bar');
+  const secs=DAYS[currentDay].sections;
+  if(secs.length<=1){bar.innerHTML='';return;}
+  bar.innerHTML=secs.map((s,i)=>'<button class="subtab'+(i===currentSub?' active':'')+'" onclick="switchSub('+i+')">'+s.subtab+'</button>').join('');
+}
+
+function switchSub(idx){
+  currentSub=idx;
+  document.querySelectorAll('.subtab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  hideBanner();
+  document.getElementById('report-btn').classList.remove('show');
+  document.getElementById('report-panel').classList.remove('show');
+  document.getElementById('submit-btn').disabled=false;
+  document.getElementById('submit-btn').textContent='Submit count';
+  renderItems();
+}
+
+function renderItems(){
+  const sec=DAYS[currentDay].sections[currentSub];
+  let html='';
+  sec.groups.forEach((grp,gIdx)=>{
+    html+='<div class="section"><div class="section-title">'+grp.title+'</div>';
+    grp.items.forEach((item,iIdx)=>{
+      const k=key(currentDay,currentSub,gIdx,iIdx);
+      const ds=counts[k+'_ds']||'';const us=counts[k+'_us']||'';
+      const total=(parseFloat(ds)||0)+(parseFloat(us)||0);
+      const dsF=ds!=='';const usF=us!=='';
+      const isLow=dsF&&usF&&total<=item.min;
+      const totDisplay=dsF||usF?total.toFixed(2).replace(/\.?0+$|\.$/, ''):'—';
+      html+=
+        '<div class="item-row">'+
+          '<div class="item-name">'+item.n+'</div>'+
+          '<div class="item-meta">'+
+            '<span class="item-unit">'+item.u+' · par: '+item.min+'</span>'+
+            '<span class="low-tag'+(isLow?' show':'')+'" id="low_'+k+'">⚠ Low stock</span>'+
+          '</div>'+
+          '<div class="inputs-row">'+
+            '<div class="loc-group"><span class="loc-label">Downstairs</span>'+
+            '<input class="qty-input'+(isLow?' flagged':'')+'" type="number" min="0" step="0.25" value="'+ds+'" id="ds_'+k+'" oninput="onInput(\''+k+'\',\'ds\',this.value,'+gIdx+','+iIdx+')" inputmode="decimal"/></div>'+
+            '<span class="divider">+</span>'+
+            '<div class="loc-group"><span class="loc-label">Upstairs</span>'+
+            '<input class="qty-input'+(isLow?' flagged':'')+'" type="number" min="0" step="0.25" value="'+us+'" id="us_'+k+'" oninput="onInput(\''+k+'\',\'us\',this.value,'+gIdx+','+iIdx+')" inputmode="decimal"/></div>'+
+            '<div class="total-display">= <span id="tot_'+k+'">'+totDisplay+'</span></div>'+
+          '</div>'+
+        '</div>';
+    });
+    html+='</div>';
+  });
+  document.getElementById('item-list').innerHTML=html;
+  updateProgress();
+}
+
+function onInput(k,loc,val,gIdx,iIdx){
+  counts[k+'_'+loc]=val;
+  const ds=parseFloat(counts[k+'_ds'])||0,us=parseFloat(counts[k+'_us'])||0,total=ds+us;
+  const item=DAYS[currentDay].sections[currentSub].groups[gIdx].items[iIdx];
+  const dsF=counts[k+'_ds']!==undefined&&counts[k+'_ds']!=='';
+  const usF=counts[k+'_us']!==undefined&&counts[k+'_us']!=='';
+  const isLow=dsF&&usF&&total<=item.min;
+  ['ds','us'].forEach(l=>{const el=document.getElementById(l+'_'+k);if(el)el.classList.toggle('flagged',isLow);});
+  const lbl=document.getElementById('low_'+k);if(lbl)lbl.classList.toggle('show',isLow);
+  const tot=document.getElementById('tot_'+k);if(tot)tot.textContent=(dsF||usF)?total.toFixed(2).replace(/\.?0+$|\.$/, ''):'—';
+  updateProgress();
+}
+
+function totalItems(){let t=0;DAYS[currentDay].sections[currentSub].groups.forEach(g=>t+=g.items.length);return t;}
+function filledItems(){
+  let f=0;
+  DAYS[currentDay].sections[currentSub].groups.forEach((g,gIdx)=>{
+    g.items.forEach((_,iIdx)=>{
+      const k=key(currentDay,currentSub,gIdx,iIdx);
+      if((counts[k+'_ds']!==undefined&&counts[k+'_ds']!=='')&&(counts[k+'_us']!==undefined&&counts[k+'_us']!==''))f++;
+    });
+  });
+  return f;
+}
+
+function updateProgress(){
+  const total=totalItems(),filled=filledItems();
+  const pct=total>0?Math.round(filled/total*100):0;
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('progress-text').textContent=filled+' / '+total;
+  document.getElementById('submit-btn').disabled=filled<total;
+}
+
+async function submitCount(){
+  const employee=document.getElementById('employee-select').value;
+  if(!employee){showBanner('error','Please select your name before submitting.');return;}
+  const sec=DAYS[currentDay].sections[currentSub];
+  const notes=document.getElementById('notes-field').value.trim();
+  const items=[];
+  sec.groups.forEach((grp,gIdx)=>{
+    grp.items.forEach((item,iIdx)=>{
+      const k=key(currentDay,currentSub,gIdx,iIdx);
+      const ds=parseFloat(counts[k+'_ds'])||0,us=parseFloat(counts[k+'_us'])||0,total=ds+us;
+      const order=total<item.min?parseFloat((item.min-total).toFixed(2)):0;
+      items.push({name:item.n,downstairs:ds,upstairs:us,total:total,par:item.min,order:order,unit:item.u,vendor:item.vendor||grp.vendor||''});
+    });
+  });
+  const payload={day:DAYS[currentDay].label,section:sec.subtab,employee:employee,notes:notes,items:items};
+  showBanner('loading','Submitting to Google Sheets…');
+  document.getElementById('submit-btn').disabled=true;
+  try{
+    const url=SCRIPT_URL+'?payload='+encodeURIComponent(JSON.stringify(payload));
+    const resp=await fetch(url);
+    const data=await resp.json();
+    if(data.status==='success'){
+      showBanner('success','Count submitted — data is in your Google Sheet.');
+      document.getElementById('submit-btn').textContent='Submitted ✓';
+      document.getElementById('report-btn').classList.add('show');
+    } else {
+      throw new Error(data.message||'Unknown error');
+    }
+  }catch(err){
+    showBanner('error','Submission failed: '+err.message);
+    document.getElementById('submit-btn').disabled=false;
+  }
+}
+
+function toggleReport(){
+  const panel=document.getElementById('report-panel');
+  panel.classList.toggle('show');
+  if(panel.classList.contains('show'))buildReport();
+}
+
+function buildReport(){
+  const panel=document.getElementById('report-panel');
+  const sec=DAYS[currentDay].sections[currentSub];
+  const date=new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  let vendorMap={};
+  sec.groups.forEach((grp,gIdx)=>{
+    grp.items.forEach((item,iIdx)=>{
+      const k=key(currentDay,currentSub,gIdx,iIdx);
+      const total=(parseFloat(counts[k+'_ds'])||0)+(parseFloat(counts[k+'_us'])||0);
+      if(total<item.min){
+        const vendor=item.vendor||grp.vendor||'Other';
+        if(!vendorMap[vendor])vendorMap[vendor]=[];
+        vendorMap[vendor].push({name:item.n,have:total,order:parseFloat((item.min-total).toFixed(2)),unit:item.u,low:total<=item.min*0.5});
+      }
+    });
+  });
+  let html='<div class="report-title">📋 Order report — '+date+'</div>';
+  const vendors=Object.keys(vendorMap);
+  if(vendors.length===0){
+    html+='<p style="font-size:14px;color:#888780;">All items at or above par. No order needed.</p>';
+  }else{
+    vendors.forEach(v=>{
+      html+='<div class="report-vendor"><div class="report-vendor-title">🏪 '+v+'</div>';
+      vendorMap[v].forEach(n=>{
+        html+='<div class="report-row"><span class="rname'+(n.low?' flag':'')+'">'+n.name+'</span>'+
+        '<span class="rqty">have '+n.have+' · order <strong>'+n.order+' '+n.unit+'</strong></span></div>';
+      });
+      html+='</div>';
+    });
+  }
+  const notes=document.getElementById('notes-field').value.trim();
+  if(notes)html+='<div class="report-notes"><strong>Notes:</strong> '+notes+'</div>';
+  panel.innerHTML=html;
+}
+
+switchDay(getTodayIndex());
+</script>
+</body>
+</html>
